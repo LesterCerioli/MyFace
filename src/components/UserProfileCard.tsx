@@ -40,9 +40,13 @@ export default function UserProfileCard() {
   return (
     <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 sticky top-20">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-violet-500 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-          {(user.displayName || user.username).charAt(0).toUpperCase()}
-        </div>
+        {user.avatarUrl ? (
+          <img src={user.avatarUrl} alt="" className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+        ) : (
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-violet-500 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+            {(user.displayName || user.username).charAt(0).toUpperCase()}
+          </div>
+        )}
         <div className="min-w-0">
           <p className="font-semibold text-sm text-gray-100 truncate">
             {user.displayName || user.username}
