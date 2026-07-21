@@ -49,6 +49,74 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const userId = await getUserIdFromCookie();
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Not authenticated" },
+        { status: 401 }
+      );
+    }
+
+    const result = await docClient.send(
+      new GetCommand({
+        TableName: "MyFacePosts",
+        Key: { postId: id },
+      })
+    );
+
+    if (!result.Item) {
+      return NextResponse.json(
+        { success: false, error: "Post not found" },
+        { status: 404 }
+      );
+    }
+
+    if (result.Item.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: "Not authorized" },
+        { status: 403 }
+      );
+    }
+
+    const { text } = await request.json();
+
+    if (!text || typeof text !== "string" || text.trim().length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Post text cannot be empty" },
+        { status: 400 }
+      );
+    }
+
+    await docClient.send(
+      new UpdateCommand({
+        TableName: "MyFacePosts",
+        Key: { postId: id },
+        UpdateExpression: "SET #text = :text",
+        ExpressionAttributeNames: { "#text": "text" },
+        ExpressionAttributeValues: { ":text": text.trim() },
+      })
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: { postId: id, text: text.trim() },
+    });
+  } catch (error) {
+    console.error("Edit post error:", error);
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
