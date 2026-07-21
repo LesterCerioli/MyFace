@@ -62,23 +62,19 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
 
       for (let i = 0; i < mediaFiles.length; i++) {
         const file = mediaFiles[i];
-        const presignRes = await fetch("/api/upload", {
+        const body = new FormData();
+        body.append("file", file);
+
+        const uploadRes = await fetch("/api/upload", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileName: file.name, contentType: file.type }),
+          body,
         });
 
-        const presignData = await presignRes.json();
-        if (!presignData.success) throw new Error("Failed to get upload URL");
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) throw new Error(uploadData.error || "Failed to upload file");
 
-        await fetch(presignData.data.uploadUrl, {
-          method: "PUT",
-          body: file,
-          headers: { "Content-Type": file.type },
-        });
-
-        uploadedUrls.push(presignData.data.publicUrl);
-        uploadedTypes.push(presignData.data.mediaType);
+        uploadedUrls.push(uploadData.data.publicUrl);
+        uploadedTypes.push(uploadData.data.mediaType);
       }
 
       const postRes = await fetch("/api/posts", {

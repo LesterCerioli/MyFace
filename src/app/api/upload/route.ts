@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Client, S3_BUCKET } from "@/lib/aws";
 import { getUserIdFromCookie } from "@/lib/auth";
 
@@ -17,35 +16,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { fileName, contentType } = await request.json();
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
 
-    if (!fileName || !contentType) {
+    if (!file) {
       return NextResponse.json(
-        { success: false, error: "fileName and contentType are required" },
+        { success: false, error: "File is required" },
         { status: 400 }
       );
     }
 
-    const extension = fileName.split(".").pop() || "bin";
+    const extension = file.name.split(".").pop() || "bin";
     const key = `uploads/${userId}/${uuidv4()}.${extension}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-    const command = new PutObjectCommand({
-      Bucket: S3_BUCKET,
-      Key: key,
-      ContentType: contentType,
-    });
-
-    const uploadUrl = await getSignedUrl(s3Client, command, {
-      expiresIn: 3600,
-    });
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: S3_BUCKET,
+        Key: key,
+        Body: buffer,
+        ContentType: file.type,
+      })
+    );
 
     const publicUrl = `${PUBLIC_URL_BASE}/${S3_BUCKET}/${key}`;
-    const mediaType = contentType.startsWith("video/") ? "video" : "image";
+    const mediaType = file.type.startsWith("video/") ? "video" : "image";
 
     return NextResponse.json({
       success: true,
       data: {
-        uploadUrl,
         publicUrl,
         key,
         mediaType,

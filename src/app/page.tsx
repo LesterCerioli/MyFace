@@ -17,13 +17,16 @@ export default function HomePage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => res.json())
       .then((data) => {
         setAuthenticated(data.success);
-        if (!data.success) {
+        if (data.success) {
+          setCurrentUserId(data.data.userId);
+        } else {
           router.push("/login");
         }
       })
@@ -85,6 +88,18 @@ export default function HomePage() {
           : p
       )
     );
+  }
+
+  function handlePostUpdated(postId: string, text: string) {
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.postId === postId ? { ...p, text } : p
+      )
+    );
+  }
+
+  function handlePostDeleted(postId: string) {
+    setPosts((prev) => prev.filter((p) => p.postId !== postId));
   }
 
   if (checkingAuth) {
@@ -154,8 +169,11 @@ export default function HomePage() {
                     <PostCard
                       key={post.postId}
                       post={post}
+                      currentUserId={currentUserId ?? undefined}
                       onLikeToggled={handleLikeToggled}
                       onCommentAdded={handleCommentAdded}
+                      onPostUpdated={handlePostUpdated}
+                      onPostDeleted={handlePostDeleted}
                     />
                   ))}
                 </div>
