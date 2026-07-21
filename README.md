@@ -72,3 +72,6 @@ npm run dev
 | `npm run build` | Build for production |
 | `npm run migrate` | Run DynamoDB migrations and S3 setup |
 | `npm run lint` | Run ESLint |
+
+
+###1
